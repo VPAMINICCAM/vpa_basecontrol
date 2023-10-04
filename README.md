@@ -4,8 +4,8 @@ This reporepository is a package that drives the DB19 hardware. The code is a co
 + Relavant and minimun selection from Duckietown offical interface packages, [dt-duckiebot-interface](https://github.com/duckietown/dt-duckiebot-interface)
 + Simple PI controller that control wheel spinning speed based on feedback of the encoder
 
-[!NOTE]
-This package is not in a docker container like the original Duckietown library as we find it more friendly to beginners of the education purpose. This may not be the best practice!
+> [!NOTE]
+> This package is not in a docker container like the original Duckietown library as we find it more friendly to beginners of the education purpose. This may not be the best practice!
 
 ## Environments and Setup
 ### Operating System and ROS
