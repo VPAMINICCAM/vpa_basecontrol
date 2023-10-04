@@ -27,3 +27,6 @@ To enable raspi camera, you may need install [raspi-config](https://www.raspberr
 #### Publish
 + **~tick**: customized msgs, as shown in WheelEncoderStamed.msg. It contains the spinning speed (omega,rad/s), 
 + **Wheels_Cmd**: cistomized msgs, as shown in WheelsCmd.msg. It contains the throttle towards both wheels (-1 to 1)
+
+### Dynamic Reconfigure
+It is possible to tune the P and I parameters of the wheel spining controller with a dynamic reconfigure interface.
