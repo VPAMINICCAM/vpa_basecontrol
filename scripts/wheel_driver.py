@@ -4,8 +4,8 @@ import rospy
 from dagu_wheels_driver import DaguWheelsDriver
 
 from std_msgs.msg import Bool
-from vlpduckie_base_control.msg import WheelsCmd,WheelEncoderStamped
-from vlpduckie_base_control.cfg import omegaConfig
+from vpa_db19interface.msg import WheelsCmd,WheelEncoderStamped
+from vpa_db19interface.cfg import omegaConfig
 from dynamic_reconfigure.server import Server
 class WheelsDriverNode():
     """Node handling the motor velocities communication.
