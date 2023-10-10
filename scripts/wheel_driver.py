@@ -10,18 +10,14 @@ from dynamic_reconfigure.server import Server
 class WheelsDriverNode():
     """Node handling the motor velocities communication.
 
-        The emergency flag is `False` by default.
 
     Subscribers:
        ~wheel_cmd (:obj:`self.defined`)
-       ~emergency_stop (:obj:`Bool`): Emergency stop. Can stop the actual execution of
-           the wheel commands by the motors if set to `True`. Set to `False` for nominal
-           operations.
     """
 
     def __init__(self):
         
-        self.estop = False
+        self.estop = True
 
         # Setup the driver
         self.driver = DaguWheelsDriver()
@@ -44,7 +40,7 @@ class WheelsDriverNode():
         
         # Subscribers
         self.sub_topic = rospy.Subscriber("wheels_cmd", WheelsCmd, self.wheels_cmd_cb, queue_size=1)
-        self.sub_e_stop = rospy.Subscriber("emergency_stop", Bool, self.estop_cb, queue_size=1)
+        self.sub_e_stop = rospy.Subscriber("/global_start", Bool, self.estop_cb, queue_size=1)
         self.sub_left_tick  = rospy.Subscriber("left_wheel_encoder_node/tick",WheelEncoderStamped,self.left_omega_callback,queue_size=1)
         self.sub_right_tick = rospy.Subscriber("right_wheel_encoder_node/tick",WheelEncoderStamped,self.right_omega_callback,queue_size=1)
         self.srv = Server(omegaConfig,self.dynamic_reconfigure_callback)
@@ -79,9 +75,9 @@ class WheelsDriverNode():
         """
         self.estop = msg.data
         if self.estop:
-            self.log("Emergency Stop Activated")
+            rospy.log("Global Brake Activated")
         else:
-            self.log("Emergency Stop Released")
+            rospy.log("Global Brake Released")
 
     def on_shutdown(self):
         """
