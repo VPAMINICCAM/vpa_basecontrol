@@ -24,6 +24,7 @@ To enable raspi camera, you may need install [raspi-config](https://www.raspberr
 ### Topics
 #### Subscribe
 + **cmd_vel**: relative name, standard format as in [geometry_msgs/Twist](http://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/Twist.html). Please be noted that the wheel is programmed from not going backwards, but it does brake.
++ **/global_brake** a global topic from the lab control. The operation will not start unless such topic is False. This is to make sure robots start at about the same time.
 #### Publish
 + **~tick**: customized msgs, as shown in WheelEncoderStamed.msg. It contains the spinning speed (omega,rad/s), 
 + **Wheels_Cmd**: cistomized msgs, as shown in WheelsCmd.msg. It contains the throttle towards both wheels (-1 to 1)

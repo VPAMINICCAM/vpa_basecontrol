@@ -40,7 +40,7 @@ class WheelsDriverNode():
         
         # Subscribers
         self.sub_topic = rospy.Subscriber("wheels_cmd", WheelsCmd, self.wheels_cmd_cb, queue_size=1)
-        self.sub_e_stop = rospy.Subscriber("/global_start", Bool, self.estop_cb, queue_size=1)
+        self.sub_e_stop = rospy.Subscriber("/global_brake", Bool, self.estop_cb, queue_size=1)
         self.sub_left_tick  = rospy.Subscriber("left_wheel_encoder_node/tick",WheelEncoderStamped,self.left_omega_callback,queue_size=1)
         self.sub_right_tick = rospy.Subscriber("right_wheel_encoder_node/tick",WheelEncoderStamped,self.right_omega_callback,queue_size=1)
         self.srv = Server(omegaConfig,self.dynamic_reconfigure_callback)
