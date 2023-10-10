@@ -75,9 +75,9 @@ class WheelsDriverNode():
         """
         self.estop = msg.data
         if self.estop:
-            rospy.log("Global Brake Activated")
+            rospy.loginfo("Global Brake Activated")
         else:
-            rospy.log("Global Brake Released")
+            rospy.loginfo("Global Brake Released")
 
     def on_shutdown(self):
         """
