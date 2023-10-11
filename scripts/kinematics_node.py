@@ -4,7 +4,7 @@ import rospy
 
 from vpa_db19interface.msg import WheelsCmd
 from geometry_msgs.msg import Twist
-
+from std_msgs.msg import Bool
 class KinematicsNode():
     """
     The `KinematicsNode` maps car commands send from various nodes to wheel commands that the robot can execute.
@@ -35,7 +35,7 @@ class KinematicsNode():
         # self.read_params_from_calibration_file()
 
         self._k = rospy.get_param("~k")
-
+        self.estop = True
         # may apply dynamic-reconfiguration to the following parameters
         self._gain      = rospy.get_param("~gain")
         self._trim      = rospy.get_param("~trim")
@@ -52,6 +52,7 @@ class KinematicsNode():
         # Setup subscribers
         self.sub_car_cmd = rospy.Subscriber("cmd_vel", Twist, self.car_cmd_callback)
         # ---
+        self.sub_e_stop = rospy.Subscriber("/global_brake", Bool, self.estop_cb, queue_size=1)
         rospy.loginfo("Kinematics Node Initialized, Standing by for twist command")
 
     def car_cmd_callback(self, msg_car_cmd:Twist):
@@ -85,13 +86,28 @@ class KinematicsNode():
         msg_wheels_cmd              = WheelsCmd()
         msg_wheels_cmd.vel_right    = omega_r
         msg_wheels_cmd.vel_left     = omega_l
-        # if msg_car_cmd.linear.x == 0:
-        #     print('kinematic control',omega_l,omega_r)
+        
+        if self.estop:
+            msg_wheels_cmd.vel_right = 0
+            msg_wheels_cmd.vel_left  = 0
+        
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
 
     # def trim(value,low,high):
     #     return max(min(value, high), low)
-    
+    def estop_cb(self,msg):
+        """
+        Callback that enables/disables emergency stop
+
+            Args:
+                msg (BoolStamped): emergency_stop flag
+        """
+        self.estop = msg.data
+        if self.estop:
+            rospy.loginfo("Global Brake Activated")
+        else:
+            rospy.loginfo("Global Brake Released")
+            
 if __name__ == "__main__":
     rospy.init_node("kinematics_node")
     node = KinematicsNode()

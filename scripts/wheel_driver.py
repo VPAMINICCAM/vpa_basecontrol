@@ -17,14 +17,12 @@ class WheelsDriverNode():
 
     def __init__(self):
         
-        self.estop = True
+        
 
         # Setup the driver
         self.driver = DaguWheelsDriver()
         #self.log("Initialized.")
-        
-
-        
+                
         self._left_omega      = 0
         self._right_omega     = 0
         self._vel_left_ref    = 0
@@ -40,7 +38,7 @@ class WheelsDriverNode():
         
         # Subscribers
         self.sub_topic = rospy.Subscriber("wheels_cmd", WheelsCmd, self.wheels_cmd_cb, queue_size=1)
-        self.sub_e_stop = rospy.Subscriber("/global_brake", Bool, self.estop_cb, queue_size=1)
+        
         self.sub_left_tick  = rospy.Subscriber("left_wheel_encoder_node/tick",WheelEncoderStamped,self.left_omega_callback,queue_size=1)
         self.sub_right_tick = rospy.Subscriber("right_wheel_encoder_node/tick",WheelEncoderStamped,self.right_omega_callback,queue_size=1)
         self.srv = Server(omegaConfig,self.dynamic_reconfigure_callback)
@@ -50,12 +48,12 @@ class WheelsDriverNode():
         """
         Callback that sets wheels' speeds.
         """
-        if self.estop:
-            self.driver.set_wheels_speed(left=0, right=0)
-        else:
-            self._vel_left_ref    = msg.vel_left
-            self._vel_right_ref   = msg.vel_right
-
+        # if self.estop:
+        #     self.driver.set_wheels_speed(left=0, right=0)
+        #     print('in the brake, set 0')
+        # else:
+        self._vel_left_ref    = msg.vel_left
+        self._vel_right_ref   = msg.vel_right
             # vel_left    = self.omega_pid(self._left_omega,vel_left_ref)
             # vel_right   = self.omega_pid(self._right_omega,vel_right_ref)
         
@@ -65,19 +63,6 @@ class WheelsDriverNode():
         self.kp = config.kp
         self.ki = config.ki
         return config
-        
-    def estop_cb(self,msg):
-        """
-        Callback that enables/disables emergency stop
-
-            Args:
-                msg (BoolStamped): emergency_stop flag
-        """
-        self.estop = msg.data
-        if self.estop:
-            rospy.loginfo("Global Brake Activated")
-        else:
-            rospy.loginfo("Global Brake Released")
 
     def on_shutdown(self):
         """
