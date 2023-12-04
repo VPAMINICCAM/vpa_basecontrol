@@ -54,7 +54,7 @@
   <exec_depend>rospy</exec_depend>
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
-  <exec_depend>smbus</exec_depend>
+  <exec_depend>python3_smbus</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
