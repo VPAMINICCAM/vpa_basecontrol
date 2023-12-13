@@ -2,19 +2,19 @@
     <arg name="node_name" default="kinematics_node"/>
     <arg name="veh" doc="Name of vehicle. ex: megaman" default=""/>
     <group if="$(eval veh == '')">
-        <node name="$(arg node_name)" pkg="vpa_db19interface" type="kinematics_node.py" output="screen" required="true">
-            <rosparam command="load" file="$(find vpa_db19interface)/config/default.yaml"/>
+        <node name="$(arg node_name)" pkg="vpa_basecontrol" type="kinematics_node.py" output="screen" required="true">
+            <rosparam command="load" file="$(find vpa_basecontrol)/config/default.yaml"/>
         </node>
-        <include file="$(find vpa_db19interface)/launch/wheel_base_control.launch">
+        <include file="$(find vpa_basecontrol)/launch/wheel_base_control.launch">
             <arg name="veh" value="$(arg veh)"/>
         </include>
     </group>
     <group unless="$(eval veh == '')">
         <group ns="$(arg veh)">
-            <node name="$(arg node_name)" pkg="vpa_db19interface" type="kinematics_node.py" output="screen" required="true">
-                <rosparam command="load" file="$(find vpa_db19interface)/config/default.yaml"/>
+            <node name="$(arg node_name)" pkg="vpa_basecontrol" type="kinematics_node.py" output="screen" required="true">
+                <rosparam command="load" file="$(find vpa_basecontrol)/config/default.yaml"/>
             </node>
-            <include file="$(find vpa_db19interface)/launch/wheel_base_control.launch">
+            <include file="$(find vpa_basecontrol)/launch/wheel_base_control.launch">
                 <arg name="veh" value="$(arg veh)"/>
             </include>
         </group>

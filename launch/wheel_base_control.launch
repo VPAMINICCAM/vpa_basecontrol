@@ -2,12 +2,12 @@
     <arg name="veh" doc="Name of vehicle. ex: megaman" default=""/>
     <group if="$(eval veh == '')">
     <!-- single robot operation -->
-        <node name="wheel_driver" pkg="vpa_db19interface" type="wheel_driver.py" output="screen"/>
-        <include file="$(find vpa_db19interface)/launch/wheel_encoder_singlewheel.launch">
+        <node name="wheel_driver" pkg="vpa_basecontrol" type="wheel_driver.py" output="screen"/>
+        <include file="$(find vpa_basecontrol)/launch/wheel_encoder_singlewheel.launch">
             <arg name="wheel" value="left"/>
             <arg name="param_file_name" value="left_wheel"/>
         </include>
-        <include file="$(find vpa_db19interface)/launch/wheel_encoder_singlewheel.launch">
+        <include file="$(find vpa_basecontrol)/launch/wheel_encoder_singlewheel.launch">
             <arg name="wheel" value="right"/>
             <arg name="param_file_name" value="right_wheel"/>
         </include>        
@@ -15,11 +15,11 @@
     <group unless="$(eval veh == '')">
     <!-- multi robot operation -->
         <group ns="$(arg veh)">
-            <node name="wheel_driver" pkg="vpa_db19interface" type="wheel_driver.py" output="screen"/>
-            <include file="$(find vpa_db19interface)/launch/wheel_encoder_singlewheel.launch">
+            <node name="wheel_driver" pkg="vpa_basecontrol" type="wheel_driver.py" output="screen"/>
+            <include file="$(find vpa_basecontrol)/launch/wheel_encoder_singlewheel.launch">
                 <arg name="wheel" value="left"/>
             </include>
-            <include file="$(find vpa_db19interface)/launch/wheel_encoder_singlewheel.launch">
+            <include file="$(find vpa_basecontrol)/launch/wheel_encoder_singlewheel.launch">
                 <arg name="wheel" value="right"/>
                 <arg name="param_file_name" value="right_wheel"/>
             </include>    
