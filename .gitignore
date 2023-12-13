@@ -1,2 +1,3 @@
 config/custome.yaml
 scripts/wheel_tester.py
+scripts/__pycache__/
