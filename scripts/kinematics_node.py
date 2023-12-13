@@ -2,7 +2,7 @@
 
 import rospy
 
-from vpa_db19interface.msg import WheelsCmd
+from vpa_basecontrol.msg import WheelsCmd
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
 class KinematicsNode():
