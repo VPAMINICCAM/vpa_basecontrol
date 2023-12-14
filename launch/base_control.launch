@@ -1,6 +1,5 @@
-<?xml version="1.0"?>
-
 <launch>
+
     <!-- support multi robot -->
     <arg name="robot_name" default=""/>   <!-- support multi robot -->
     <!-- robot frame -->
@@ -20,52 +19,54 @@
     <arg name="pub_sonar"       default="False" />
     <!-- base control node -->
 
-    <!--ros namespace name can NOT be empty,so need evaluate use multi robot or not-->
-    <group if="$(eval robot_name == '')">
+<!--ros namespace name can NOT be empty,so need evaluate use multi robot or not-->
+<group if="$(eval robot_name == '')">
+    <node name="base_control"   pkg="vpa_basecontrol"  type="base_control.py" output="screen">
+        <param name="baudrate"   value="115200"/>  
+        <param name="port"  value='/dev/move_base'/>
+
+        <param name="base_id"    value="$(arg base_frame)"/> <!-- base_link name -->
+        <param name="odom_id"    value="$(arg odom_frame)"/>      <!-- odom link name -->
+        <param name="imu_id"    value="$(arg imu_frame)"/>      <!-- imu link name -->
+
+        <param name="odom_topic" value="$(arg odom_topic)"/> <!-- topic name -->
+        <param name="imu_topic" value="$(arg imu_topic)"/> <!-- topic name -->
+        <param name="battery_topic" value="$(arg battery_topic)"/> <!-- topic name -->
+
+        <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/> 
+        <param name="ackermann_cmd_topic" value="$(arg ackermann_cmd_topic)"/> <!-- topic name -->
+
+        <param name="pub_imu" value="$(arg pub_imu)"/> <!-- pub imu topic or not -->
+        <param name="pub_sonar" value="$(arg pub_sonar)"/> <!-- pub sonar topic or not -->
+        
+        <param name="sub_ackermann" value="$(arg sub_ackermann)"/> <!-- sub ackermann topic or not -->
+    </node>
+</group>
+
+<group unless="$(eval robot_name == '')">
+    <group ns="$(arg robot_name)">
         <node name="base_control"   pkg="vpa_basecontrol"  type="base_control.py" output="screen">
             <param name="baudrate"   value="115200"/>  
             <param name="port"  value='/dev/move_base'/>
 
-            <param name="base_id"    value="$(arg base_frame)"/> <!-- base_link name -->
-            <param name="odom_id"    value="$(arg odom_frame)"/>      <!-- odom link name -->
-            <param name="imu_id"    value="$(arg imu_frame)"/>      <!-- imu link name -->
+            <param name="base_id"    value="$(arg robot_name)/$(arg base_frame)"/> <!-- base_link name -->
+            <param name="odom_id"    value="$(arg robot_name)/$(arg odom_frame)"/>      <!-- odom link name -->
+            <param name="imu_id"    value="$(arg robot_name)/$(arg imu_frame)"/>      <!-- imu link name -->
 
             <param name="odom_topic" value="$(arg odom_topic)"/> <!-- topic name -->
             <param name="imu_topic" value="$(arg imu_topic)"/> <!-- topic name -->
             <param name="battery_topic" value="$(arg battery_topic)"/> <!-- topic name -->
 
             <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/> 
-            <param name="ackermann_cmd_topic" value="$(arg ackermann_cmd_topic)"/> <!-- topic name -->
+            <param name="ackermann_cmd_topic" value="$(arg robot_name)$(arg ackermann_cmd_topic)"/> <!-- topic name -->
 
             <param name="pub_imu" value="$(arg pub_imu)"/> <!-- pub imu topic or not -->
             <param name="pub_sonar" value="$(arg pub_sonar)"/> <!-- pub sonar topic or not -->
-            
             <param name="sub_ackermann" value="$(arg sub_ackermann)"/> <!-- sub ackermann topic or not -->
         </node>
     </group>
-
-    <group unless="$(eval robot_name == '')">
-        <group ns="$(arg robot_name)">
-            <node name="base_control"   pkg="vpa_basecontrol"  type="base_control.py" output="screen">
-                <param name="baudrate"   value="115200"/>  
-                <param name="port"  value='/dev/move_base'/>
-
-                <param name="base_id"    value="$(arg robot_name)/$(arg base_frame)"/> <!-- base_link name -->
-                <param name="odom_id"    value="$(arg robot_name)/$(arg odom_frame)"/>      <!-- odom link name -->
-                <param name="imu_id"    value="$(arg robot_name)/$(arg imu_frame)"/>      <!-- imu link name -->
-
-                <param name="odom_topic" value="$(arg odom_topic)"/> <!-- topic name -->
-                <param name="imu_topic" value="$(arg imu_topic)"/> <!-- topic name -->
-                <param name="battery_topic" value="$(arg battery_topic)"/> <!-- topic name -->
-
-                <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/> 
-                <param name="ackermann_cmd_topic" value="$(arg robot_name)$(arg ackermann_cmd_topic)"/> <!-- topic name -->
-
-                <param name="pub_imu" value="$(arg pub_imu)"/> <!-- pub imu topic or not -->
-                <param name="pub_sonar" value="$(arg pub_sonar)"/> <!-- pub sonar topic or not -->
-                <param name="sub_ackermann" value="$(arg sub_ackermann)"/> <!-- sub ackermann topic or not -->
-            </node>
-        </group>
-    </group>
+</group>
 
 </launch>
+
+

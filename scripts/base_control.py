@@ -2,7 +2,7 @@
 # coding=gbk
 
 # Copyright 2019 Wechange Tech.
-# Developer: FuZhi, Liu (liu.fuzhi@wechangetech.com)
+# Developer: FuZhi, Liu (liu.fuzhi@liu.fuzhi@bingda-robot.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,13 +24,12 @@ import sys
 import math
 import serial
 import string
+import ctypes
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import BatteryState
 from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Range
-
-import ctypes
 
 base_type = os.getenv('BASE_TYPE')
 if os.getenv('SONAR_NUM') is None:
@@ -38,38 +37,37 @@ if os.getenv('SONAR_NUM') is None:
 else:
     sonar_num = int(os.getenv('SONAR_NUM')) 
 
-
-#class queue is design for uart receive data cache
+# class queue is design for uart receive data cache
 class queue:
-    def __init__(self, capacity = 1024*4):
+    def __init__(self, capacity=1024 * 4):
         self.capacity = capacity
         self.size = 0
         self.front = 0
         self.rear = 0
-        self.array = [0]*capacity
- 
+        self.array = [0] * capacity
+
     def is_empty(self):
         return 0 == self.size
- 
+
     def is_full(self):
         return self.size == self.capacity
- 
+
     def enqueue(self, element):
         if self.is_full():
             raise Exception('queue is full')
         self.array[self.rear] = element
         self.size += 1
         self.rear = (self.rear + 1) % self.capacity
- 
+
     def dequeue(self):
         if self.is_empty():
             raise Exception('queue is empty')
         self.size -= 1
         self.front = (self.front + 1) % self.capacity
- 
+
     def get_front(self):
         return self.array[self.front]
-    
+
     def get_front_second(self):
         return self.array[((self.front + 1) % self.capacity)]
 
@@ -78,11 +76,14 @@ class queue:
 
     def show_queue(self):
         for i in range(self.capacity):
-            print self.array[i],
+            # print self.array[i],
+            pass
         print(' ')
+
 #class BaseControl is design for hardware base relative control
 class BaseControl:
     def __init__(self):
+        self.Circleloop = queue(capacity = 1024*4)
         #Get params
         self.baseId = rospy.get_param('~base_id','base_footprint')
         self.odomId = rospy.get_param('~odom_id','odom')
@@ -94,7 +95,6 @@ class BaseControl:
         self.battery_freq = float(rospy.get_param('~battery_freq','1'))
         self.cmd_vel_topic= rospy.get_param('~cmd_vel_topic','/cmd_vel')
         self.ackermann_cmd_topic = rospy.get_param('~ackermann_cmd_topic','/ackermann_cmd_topic')
-
         self.pub_imu = bool(rospy.get_param('~pub_imu',False))
         if(self.pub_imu == True):
             self.imuId = rospy.get_param('~imu_id','imu')
@@ -102,12 +102,10 @@ class BaseControl:
             self.imu_freq = float(rospy.get_param('~imu_freq','50'))
             if self.imu_freq > 100:
                 self.imu_freq = 100
-
         self.pub_sonar = bool(rospy.get_param('~pub_sonar',False))
         self.sub_ackermann = bool(rospy.get_param('~sub_ackermann',False))
 
-
-        #define param
+        #define variable
         self.current_time = rospy.Time.now()
         self.previous_time = self.current_time
         self.pose_x = 0.0
@@ -125,7 +123,6 @@ class BaseControl:
         self.BatteryFlag = False
         self.OdomTimeCounter = 0
         self.BatteryTimeCounter = 0
-        self.Circleloop = queue(capacity = 1024*4)
         self.Vx = 0
         self.Vy = 0
         self.Vyaw = 0
@@ -163,7 +160,7 @@ class BaseControl:
             self.sub = rospy.Subscriber(self.ackermann_cmd_topic,AckermannDriveStamped,self.ackermannCmdCB,queue_size=20)
         else:
             self.sub = rospy.Subscriber(self.cmd_vel_topic,Twist,self.cmdCB,queue_size=20)
-        self.pub = rospy.Publisher(self.odom_topic,Odometry,queue_size=10)
+        self.pub = rospy.Publisher(self.odom_topic,Odometry,queue_size=10) #odom publisher
         self.battery_pub = rospy.Publisher(self.battery_topic,BatteryState,queue_size=3)
         if self.pub_sonar:
             if sonar_num > 0:
@@ -174,8 +171,8 @@ class BaseControl:
                 self.range_pub3 = rospy.Publisher('sonar_3',Range,queue_size=3)
             if sonar_num > 3:
                 self.range_pub4 = rospy.Publisher('sonar_4',Range,queue_size=3)
-            if sonar_num > 0:
-                self.timer_sonar = rospy.Timer(rospy.Duration(100.0/1000),self.timerSonarCB)
+            if sonar_num > 0:  
+                self.timer_sonar = rospy.Timer(rospy.Duration(100.0/1000),self.timerSonarCB) 
 
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.timer_odom = rospy.Timer(rospy.Duration(1.0/self.odom_freq),self.timerOdomCB)
@@ -183,7 +180,7 @@ class BaseControl:
         self.timer_communication = rospy.Timer(rospy.Duration(1.0/500),self.timerCommunicationCB)
 
         #inorder to compatibility old version firmware,imu topic is NOT pud in default
-        if(self.pub_imu):
+        if(self.pub_imu):            
             self.imu_pub = rospy.Publisher(self.imu_topic,Imu,queue_size=10)
             self.timer_imu = rospy.Timer(rospy.Duration(1.0/self.imu_freq),self.timerIMUCB) 
         self.getVersion()
@@ -191,9 +188,8 @@ class BaseControl:
         #so need this gap
         while self.movebase_hardware_version[0] == 0:
             pass
-        # if self.movebase_hardware_version[0] < 2:
-        #     print self.movebase_hardware_version
-        #     time.sleep(2.0)
+        if self.movebase_hardware_version[0] < 2:
+            time.sleep(2.0)
         self.getSN()
         time.sleep(0.01)
         self.getInfo()
@@ -214,17 +210,13 @@ class BaseControl:
         for i in range(length):
             ret = self.crc_1byte(ret^data[i])
         return ret               
+    
     #Subscribe vel_cmd call this to send vel cmd to move base
     def cmdCB(self,data):
         self.trans_x = data.linear.x
         self.trans_y = data.linear.y
         self.rotat_z = data.angular.z
         self.last_cmd_vel_time = rospy.Time.now()
-        output = chr(0x5a) + chr(12) + chr(0x01) + chr(0x01) + \
-            chr((int(self.trans_x*1000.0)>>8)&0xff) + chr(int(self.trans_x*1000.0)&0xff) + \
-            chr((int(self.trans_y*1000.0)>>8)&0xff) + chr(int(self.trans_y*1000.0)&0xff) + \
-            chr((int(self.rotat_z*1000.0)>>8)&0xff) + chr(int(self.rotat_z*1000.0)&0xff) + \
-            chr(0x00)
         outputdata = [0x5a,0x0c,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
         outputdata[4] = (int(self.trans_x*1000.0)>>8)&0xff
         outputdata[5] = int(self.trans_x*1000.0)&0xff
@@ -233,53 +225,293 @@ class BaseControl:
         outputdata[8] = (int(self.rotat_z*1000.0)>>8)&0xff
         outputdata[9] = int(self.rotat_z*1000.0)&0xff
         crc_8 = self.crc_byte(outputdata,len(outputdata)-1)
-        output += chr(crc_8)
+        outputdata[11] = crc_8
         while self.serialIDLE_flag:
             time.sleep(0.01)
         self.serialIDLE_flag = 4
         try:
             while self.serial.out_waiting:
                 pass
-            self.serial.write(output)
+            self.serial.write(outputdata)
         except:
             rospy.logerr("Vel Command Send Faild")
         self.serialIDLE_flag = 0
+    
     #Subscribe ackermann Cmd call this to send vel cmd to move base
     def ackermannCmdCB(self,data):
         self.speed = data.drive.speed
         self.steering_angle = data.drive.steering_angle
         self.last_ackermann_cmd_time = rospy.Time.now()
-        output = chr(0x5a) + chr(12) + chr(0x01) + chr(0x15) + \
-            chr((int(self.speed*1000.0)>>8)&0xff) + chr(int(self.speed*1000.0)&0xff) + \
-            chr(0x00) + chr(0x00) + \
-            chr((int(self.steering_angle*1000.0)>>8)&0xff) + chr(int(self.steering_angle*1000.0)&0xff) + \
-            chr(0x00)
         outputdata = [0x5a,0x0c,0x01,0x15,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
         outputdata[4] = (int(self.speed*1000.0)>>8)&0xff
         outputdata[5] = int(self.speed*1000.0)&0xff
         outputdata[8] = (int(self.steering_angle*1000.0)>>8)&0xff
         outputdata[9] = int(self.steering_angle*1000.0)&0xff
         crc_8 = self.crc_byte(outputdata,len(outputdata)-1)
-        output += chr(crc_8)
+        outputdata[11] = crc_8
         while self.serialIDLE_flag:
             time.sleep(0.01)
         self.serialIDLE_flag = 4
         try:
             while self.serial.out_waiting:
                 pass
-            self.serial.write(output)
+            self.serial.write(outputdata)
         except:
             rospy.logerr("Vel Command Send Faild")
         self.serialIDLE_flag = 0
+
+    #get move base hardware & firmware version    
+    def getVersion(self):
+        #Get version info
+        outputdata = [0x5a, 0x06, 0x01, 0xf1, 0x00, 0xd7] #0x33 is CRC-8 value
+        while(self.serialIDLE_flag):
+            time.sleep(0.01)
+        self.serialIDLE_flag = 1
+        try:
+            while self.serial.out_waiting:
+                pass
+            self.serial.write(outputdata)
+        except:
+            rospy.logerr("Get Version Command Send Faild")
+        self.serialIDLE_flag = 0 
+    
+    #get move base SN
+    def getSN(self):
+        #Get version info
+        outputdata = [0x5a, 0x06, 0x01, 0xf3, 0x00, 0x46]
+        while(self.serialIDLE_flag):
+            time.sleep(0.01)
+        self.serialIDLE_flag = 1
+        try:
+            while self.serial.out_waiting:
+                pass
+            self.serial.write(outputdata)
+        except:
+            rospy.logerr("Get SN Command Send Faild")
+        self.serialIDLE_flag = 0  
+    
+    #get move base info
+    def getInfo(self):
+        #Get version info
+        outputdata = [0x5a, 0x06, 0x01, 0x21, 0x00, 0x8f]
+        while(self.serialIDLE_flag):
+            time.sleep(0.01)
+        self.serialIDLE_flag = 1
+        try:
+            while self.serial.out_waiting:
+                pass
+            self.serial.write(outputdata)
+        except:
+            rospy.logerr("Get info Command Send Faild")
+        self.serialIDLE_flag = 0               
+    
+    #Odom Timer call this to get velocity and imu info and convert to odom topic
+    def timerOdomCB(self,event):
+        #Get move base velocity data
+        if self.movebase_firmware_version[1] == 0: 
+            #old version firmware have no version info and not support new command below
+            outputdata = [0x5a, 0x06, 0x01, 0x09, 0x00, 0x38]
+        else:
+            #in firmware version new than v1.1.0,support this command       
+            outputdata = [0x5a, 0x06, 0x01, 0x11, 0x00, 0xa2]
+        while(self.serialIDLE_flag):
+            time.sleep(0.01)
+        self.serialIDLE_flag = 1
+        try:
+            while self.serial.out_waiting:
+                pass
+            self.serial.write(outputdata)
+        except:
+            rospy.logerr("Odom Command Send Faild")
+        self.serialIDLE_flag = 0   
+        #calculate odom data
+        Vx = float(ctypes.c_int16(self.Vx).value/1000.0)
+        Vy = float(ctypes.c_int16(self.Vy).value/1000.0)
+        Vyaw = float(ctypes.c_int16(self.Vyaw).value/1000.0)
+
+        self.pose_yaw = float(ctypes.c_int16(self.Yawz).value/100.0)
+        self.pose_yaw = self.pose_yaw*math.pi/180.0
+  
+        self.current_time = rospy.Time.now()
+        dt = (self.current_time - self.previous_time).to_sec()
+        self.previous_time = self.current_time
+        self.pose_x = self.pose_x + Vx * (math.cos(self.pose_yaw))*dt - Vy * (math.sin(self.pose_yaw))*dt
+        self.pose_y = self.pose_y + Vx * (math.sin(self.pose_yaw))*dt + Vy * (math.cos(self.pose_yaw))*dt
+
+        pose_quat = tf.transformations.quaternion_from_euler(0,0,self.pose_yaw)        
+        msg = Odometry()
+        msg.header.stamp = self.current_time
+        msg.header.frame_id = self.odomId
+        msg.child_frame_id =self.baseId
+        msg.pose.pose.position.x = self.pose_x
+        msg.pose.pose.position.y = self.pose_y
+        msg.pose.pose.position.z = 0
+        msg.pose.pose.orientation.x = pose_quat[0]
+        msg.pose.pose.orientation.y = pose_quat[1]
+        msg.pose.pose.orientation.z = pose_quat[2]
+        msg.pose.pose.orientation.w = pose_quat[3]
+        msg.twist.twist.linear.x = Vx
+        msg.twist.twist.linear.y = Vy
+        msg.twist.twist.angular.z = Vyaw
+        self.pub.publish(msg)
+        self.tf_broadcaster.sendTransform((self.pose_x,self.pose_y,0.0),pose_quat,self.current_time,self.baseId,self.odomId)
+    
+    #Battery Timer callback function to get battery info
+    def timerBatteryCB(self,event):
+        outputdata = [0x5a, 0x06, 0x01, 0x07, 0x00, 0xe4]
+        while(self.serialIDLE_flag):
+            time.sleep(0.01)
+        self.serialIDLE_flag = 3
+        try:
+            while self.serial.out_waiting:
+                pass
+            self.serial.write(outputdata)
+        except:
+            rospy.logerr("Battery Command Send Faild")
+        self.serialIDLE_flag = 0
+        msg = BatteryState()
+        msg.header.stamp = self.current_time
+        msg.header.frame_id = self.baseId
+        msg.voltage = float(self.Vvoltage/1000.0)
+        msg.current = float(self.Icurrent/1000.0)
+        self.battery_pub.publish(msg)
+    
+    #Sonar Timer callback function to get battery info
+    def timerSonarCB(self,event):
+        outputdata = [0x5a, 0x06, 0x01, 0x19, 0x00, 0xd4] #0xd4 is CRC-8 value
+        while(self.serialIDLE_flag):
+            time.sleep(0.01)
+        self.serialIDLE_flag = 3
+        try:
+            while self.serial.out_waiting:
+                pass
+            self.serial.write(outputdata)
+        except:
+            rospy.logerr("Sonar Command Send Faild")
+        self.serialIDLE_flag = 0
+        msg = Range()
+        msg.header.stamp = self.current_time
+        msg.field_of_view = 0.26 #about 15 degree
+        msg.max_range = 2.5
+        msg.min_range = 0.01
+        # Sonar 1
+        msg.header.frame_id = 'Sonar_1'
+        if self.Sonar[0] == 0xff:
+            msg.range = float('inf') 
+        else:
+            msg.range = self.Sonar[0] / 100.0
+        self.range_pub1.publish(msg)
+         
+        # TF value calculate from mechanical structure
+        if('NanoRobot' in base_type ):
+            self.tf_broadcaster.sendTransform((0.0, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)
+        elif('NanoCar' in base_type):
+            self.tf_broadcaster.sendTransform((0.18, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)
+        elif('4WD' in base_type):
+            self.tf_broadcaster.sendTransform((0.0, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)
+        elif('Race182' in base_type):
+            self.tf_broadcaster.sendTransform((0.18, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)   
+        elif('NanoOmni' in base_type):
+            self.tf_broadcaster.sendTransform((0.11, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)              
+        else:
+            pass
+
+        # Sonar 2
+        if sonar_num > 1:   
+            if self.Sonar[1] == 0xff:
+                msg.range = float('inf') 
+            else:
+                msg.range = self.Sonar[1] / 100.0
+            msg.header.frame_id = 'Sonar_2'
+            self.range_pub2.publish(msg)
+            
+            if('NanoRobot' in base_type):
+                self.tf_broadcaster.sendTransform((0.0, 0.0 ,0.0 ),(0.0,0.0,-1.0,0),self.current_time,'Sonar_2',self.baseId) 
+            elif('NanoCar' in base_type):
+                self.tf_broadcaster.sendTransform((-0.035, 0.0 ,0.0 ),(0.0,0.0,-1.0,0),self.current_time,'Sonar_2',self.baseId) 
+            elif('4WD' in base_type):
+                self.tf_broadcaster.sendTransform((0.0, 0.0 ,0.0 ),(0.0,0.0,-1.0,0),self.current_time,'Sonar_2',self.baseId) 
+            elif('Race182' in base_type):
+                self.tf_broadcaster.sendTransform((-0.08, 0.0 ,0.0 ),(0.0,0.0,-1.0,0),self.current_time,'Sonar_2',self.baseId)     
+            elif('NanoOmni' in base_type):
+                self.tf_broadcaster.sendTransform((-0.11, 0.0, 0.0 ),(0.0, 0.0, -1.0, 0.0),self.current_time,'Sonar_2',self.baseId)  
+            else:
+                pass
+        if sonar_num > 2:   
+        # Sonar 3
+            msg.header.frame_id = 'Sonar_3'
+            if self.Sonar[2] == 0xff:
+                msg.range = float('inf') 
+            else:
+                msg.range = self.Sonar[2] / 100.0
+            self.range_pub3.publish(msg)
+            if('Race182' in base_type):
+                self.tf_broadcaster.sendTransform((0.0, 0.06 ,0.0 ),(0.0,0.0,0.707,0.707),self.current_time,'Sonar_3',self.baseId) 
+            elif('NanoOmni' in base_type):   
+                self.tf_broadcaster.sendTransform((0.0, 0.07 ,0.0 ),(0.0,0.0,0.707,0.707),self.current_time,'Sonar_3',self.baseId)          
+        if sonar_num > 3:   
+        # Sonar 4
+            if self.Sonar[3] == 0xff:
+                msg.range = float('inf') 
+            else:
+                msg.range = self.Sonar[3] / 100.0
+            msg.header.frame_id = 'Sonar_4'
+            self.range_pub4.publish(msg)
+            if('Race182' in base_type):
+                self.tf_broadcaster.sendTransform((0.0, -0.06 ,0.0 ),(0.0,0.0,-0.707,0.707),self.current_time,'Sonar_4',self.baseId) 
+            elif('NanoOmni' in base_type):
+                self.tf_broadcaster.sendTransform((0.0, -0.07 ,0.0 ),(0.0,0.0,-0.707,0.707),self.current_time,'Sonar_4',self.baseId) 
+    
+    #IMU Timer callback function to get raw imu info
+    def timerIMUCB(self,event):
+        outputdata = [0x5a, 0x06, 0x01, 0x13, 0x00, 0x33] #0x33 is CRC-8 value
+        while(self.serialIDLE_flag):
+            time.sleep(0.01)
+        self.serialIDLE_flag = 3
+        try:
+            while self.serial.out_waiting:
+                pass
+            self.serial.write(outputdata)
+        except:
+            rospy.logerr("Imu Command Send Faild")
+
+        self.serialIDLE_flag = 0
+        msg = Imu()
+        msg.header.stamp = self.current_time
+        msg.header.frame_id = self.imuId
+
+        msg.angular_velocity.x = float(ctypes.c_int32(self.Gyro[0]).value/100000.0)
+        msg.angular_velocity.y = float(ctypes.c_int32(self.Gyro[1]).value/100000.0)
+        msg.angular_velocity.z = float(ctypes.c_int32(self.Gyro[2]).value/100000.0)
+
+        msg.linear_acceleration.x = float(ctypes.c_int32(self.Accel[0]).value/100000.0)
+        msg.linear_acceleration.y = float(ctypes.c_int32(self.Accel[1]).value/100000.0)
+        msg.linear_acceleration.z = float(ctypes.c_int32(self.Accel[2]).value/100000.0)
+
+        msg.orientation.w = float(ctypes.c_int16(self.Quat[0]).value/10000.0)
+        msg.orientation.x = float(ctypes.c_int16(self.Quat[1]).value/10000.0)
+        msg.orientation.y = float(ctypes.c_int16(self.Quat[2]).value/10000.0)
+        msg.orientation.z = float(ctypes.c_int16(self.Quat[3]).value/10000.0)
+
+        self.imu_pub.publish(msg)  
+        # TF value calculate from mechanical structure
+        if('NanoRobot' in base_type):
+            self.tf_broadcaster.sendTransform((-0.062,-0.007,0.08),(0.0,0.0,0.0,1.0),self.current_time,self.imuId,self.baseId)   
+        elif('NanoCar' in base_type):
+            self.tf_broadcaster.sendTransform((0.0,0.0,0.09),(0.0,0.0,0.0,1.0),self.current_time,self.imuId,self.baseId) 
+        elif('4WD' in base_type):
+            self.tf_broadcaster.sendTransform((-0.065,0.0167,0.02),(0.0,0.0,0.0,1.0),self.current_time,self.imuId,self.baseId)     
+        else:
+            self.tf_broadcaster.sendTransform((0.0,0.,0.),(0.0,0.0,0.0,1.0),self.current_time,self.imuId,self.baseId) #not accuracy transform
+
     #Communication Timer callback to handle receive data
-    #depend on communication protocol
     def timerCommunicationCB(self,event):
         length = self.serial.in_waiting
         if length:
             reading = self.serial.read_all()
             if len(reading)!=0:
                 for i in range(0,len(reading)):
-                    data = (int(reading[i].encode('hex'),16)) 
+                    data = reading[i]
                     try:
                         self.Circleloop.enqueue(data)
                     except:
@@ -300,7 +532,7 @@ class BaseControl:
                         if (databuf[length-1]) == self.crc_byte(databuf,length-1):
                             pass
                         else:
-                            pass
+                            return
                         #parse receive data
                         if(databuf[3] == 0x04):
                             self.Vx =    databuf[4]*256
@@ -383,244 +615,8 @@ class BaseControl:
         else:
             # rospy.loginfo("Circle is Empty")
             pass
-    #get move base hardware & firmware version    
-    def getVersion(self):
-        #Get version info
-        output = chr(0x5a) + chr(0x06) + chr(0x01) + chr(0xf1) + chr(0x00) + chr(0xd7) #0xd7 is CRC-8 value
-        while(self.serialIDLE_flag):
-            time.sleep(0.01)
-        self.serialIDLE_flag = 1
-        try:
-            while self.serial.out_waiting:
-                pass
-            self.serial.write(output)
-        except:
-            rospy.logerr("Get Version Command Send Faild")
-        self.serialIDLE_flag = 0 
-    #get move base SN
-    def getSN(self):
-        #Get version info
-        output = chr(0x5a) + chr(0x06) + chr(0x01) + chr(0xf3) + chr(0x00) + chr(0x46) #0x46 is CRC-8 value
-        while(self.serialIDLE_flag):
-            time.sleep(0.01)
-        self.serialIDLE_flag = 1
-        try:
-            while self.serial.out_waiting:
-                pass
-            self.serial.write(output)
-        except:
-            rospy.logerr("Get SN Command Send Faild")
-        self.serialIDLE_flag = 0  
-    #get move base info
-    def getInfo(self):
-        #Get version info
-        output = chr(0x5a) + chr(0x06) + chr(0x01) + chr(0x21) + chr(0x00) + chr(0x8f) #0x8f is CRC-8 value
-        while(self.serialIDLE_flag):
-            time.sleep(0.01)
-        self.serialIDLE_flag = 1
-        try:
-            while self.serial.out_waiting:
-                pass
-            self.serial.write(output)
-        except:
-            rospy.logerr("Get info Command Send Faild")
-        self.serialIDLE_flag = 0               
-    #Odom Timer call this to get velocity and imu info and convert to odom topic
-    def timerOdomCB(self,event):
-        #Get move base velocity data
-        if self.movebase_firmware_version[1] == 0: 
-            #old version firmware have no version info and not support new command below
-            output = chr(0x5a) + chr(0x06) + chr(0x01) + chr(0x09) + chr(0x00) + chr(0x38) #0x38 is CRC-8 value
-        else:
-            #in firmware version new than v1.1.0,support this command      
-            output = chr(0x5a) + chr(0x06) + chr(0x01) + chr(0x11) + chr(0x00) + chr(0xa2) 
-        while(self.serialIDLE_flag):
-            time.sleep(0.01)
-        self.serialIDLE_flag = 1
-        try:
-            while self.serial.out_waiting:
-                pass
-            self.serial.write(output)
-        except:
-            rospy.logerr("Odom Command Send Faild")
-        self.serialIDLE_flag = 0   
-        #calculate odom data
-        Vx = float(ctypes.c_int16(self.Vx).value/1000.0)
-        Vy = float(ctypes.c_int16(self.Vy).value/1000.0)
-        Vyaw = float(ctypes.c_int16(self.Vyaw).value/1000.0)
 
-        self.pose_yaw = float(ctypes.c_int16(self.Yawz).value/100.0)
-        self.pose_yaw = self.pose_yaw*math.pi/180.0
-  
-        self.current_time = rospy.Time.now()
-        dt = (self.current_time - self.previous_time).to_sec()
-        self.previous_time = self.current_time
-        self.pose_x = self.pose_x + Vx * (math.cos(self.pose_yaw))*dt - Vy * (math.sin(self.pose_yaw))*dt
-        self.pose_y = self.pose_y + Vx * (math.sin(self.pose_yaw))*dt + Vy * (math.cos(self.pose_yaw))*dt
-
-        pose_quat = tf.transformations.quaternion_from_euler(0,0,self.pose_yaw)        
-        msg = Odometry()
-        msg.header.stamp = self.current_time
-        msg.header.frame_id = self.odomId
-        msg.child_frame_id =self.baseId
-        msg.pose.pose.position.x = self.pose_x
-        msg.pose.pose.position.y = self.pose_y
-        msg.pose.pose.position.z = 0
-        msg.pose.pose.orientation.x = pose_quat[0]
-        msg.pose.pose.orientation.y = pose_quat[1]
-        msg.pose.pose.orientation.z = pose_quat[2]
-        msg.pose.pose.orientation.w = pose_quat[3]
-        msg.twist.twist.linear.x = Vx
-        msg.twist.twist.linear.y = Vy
-        msg.twist.twist.angular.z = Vyaw
-        self.pub.publish(msg)
-        self.tf_broadcaster.sendTransform((self.pose_x,self.pose_y,0.0),pose_quat,self.current_time,self.baseId,self.odomId)
-    #Battery Timer callback function to get battery info
-    def timerBatteryCB(self,event):
-        output = chr(0x5a) + chr(0x06) + chr(0x01) + chr(0x07) + chr(0x00) + chr(0xe4) #0xe4 is CRC-8 value
-        while(self.serialIDLE_flag):
-            time.sleep(0.01)
-        self.serialIDLE_flag = 3
-        try:
-            while self.serial.out_waiting:
-                pass
-            self.serial.write(output)
-        except:
-            rospy.logerr("Battery Command Send Faild")
-        self.serialIDLE_flag = 0
-        msg = BatteryState()
-        msg.header.stamp = self.current_time
-        msg.header.frame_id = self.baseId
-        msg.voltage = float(self.Vvoltage/1000.0)
-        msg.current = float(self.Icurrent/1000.0)
-        self.battery_pub.publish(msg)
-    #Sonar Timer callback function to get battery info
-    def timerSonarCB(self,event):
-        output = chr(0x5a) + chr(0x06) + chr(0x01) + chr(0x19) + chr(0x00) + chr(0xff) #0xff is CRC-8 value
-        while(self.serialIDLE_flag):
-            time.sleep(0.01)
-        self.serialIDLE_flag = 3
-        try:
-            while self.serial.out_waiting:
-                pass
-            self.serial.write(output)
-        except:
-            rospy.logerr("Sonar Command Send Faild")
-        self.serialIDLE_flag = 0
-        msg = Range()
-        msg.header.stamp = self.current_time
-        msg.field_of_view = 0.26 #about 15 degree
-        msg.max_range = 2.5
-        msg.min_range = 0.01
-        # Sonar 1
-        msg.header.frame_id = 'Sonar_1'
-        if self.Sonar[0] == 0xff:
-            msg.range = float('inf') 
-        else:
-            msg.range = self.Sonar[0] / 100.0
-        self.range_pub1.publish(msg)
-         
-        # TF value calculate from mechanical structure
-        if('NanoRobot' in base_type ):
-            self.tf_broadcaster.sendTransform((0.0, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)
-        elif('NanoCar' in base_type):
-            self.tf_broadcaster.sendTransform((0.18, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)
-        elif('4WD' in base_type):
-            self.tf_broadcaster.sendTransform((0.0, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)
-        elif('Race182' in base_type):
-            self.tf_broadcaster.sendTransform((0.18, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)   
-        elif('NanoOmni' in base_type):
-            self.tf_broadcaster.sendTransform((0.11, 0.0, 0.0 ),(0.0, 0.0, 0.0, 1.0),self.current_time,'Sonar_1',self.baseId)              
-        else:
-            pass
-
-        # Sonar 2
-        if sonar_num > 1:   
-            if self.Sonar[1] == 0xff:
-                msg.range = float('inf') 
-            else:
-                msg.range = self.Sonar[1] / 100.0
-            msg.header.frame_id = 'Sonar_2'
-            self.range_pub2.publish(msg)
-            
-            if('NanoRobot' in base_type):
-                self.tf_broadcaster.sendTransform((0.0, 0.0 ,0.0 ),(0.0,0.0,-1.0,0),self.current_time,'Sonar_2',self.baseId) 
-            elif('NanoCar' in base_type):
-                self.tf_broadcaster.sendTransform((-0.035, 0.0 ,0.0 ),(0.0,0.0,-1.0,0),self.current_time,'Sonar_2',self.baseId) 
-            elif('4WD' in base_type):
-                self.tf_broadcaster.sendTransform((0.0, 0.0 ,0.0 ),(0.0,0.0,-1.0,0),self.current_time,'Sonar_2',self.baseId) 
-            elif('Race182' in base_type):
-                self.tf_broadcaster.sendTransform((-0.08, 0.0 ,0.0 ),(0.0,0.0,-1.0,0),self.current_time,'Sonar_2',self.baseId)     
-            elif('NanoOmni' in base_type):
-                self.tf_broadcaster.sendTransform((-0.11, 0.0, 0.0 ),(0.0, 0.0, -1.0, 0.0),self.current_time,'Sonar_2',self.baseId)  
-            else:
-                pass
-        if sonar_num > 2:   
-        # Sonar 3
-            msg.header.frame_id = 'Sonar_3'
-            if self.Sonar[2] == 0xff:
-                msg.range = float('inf') 
-            else:
-                msg.range = self.Sonar[2] / 100.0
-            self.range_pub3.publish(msg)
-            if('Race182' in base_type):
-                self.tf_broadcaster.sendTransform((0.0, 0.06 ,0.0 ),(0.0,0.0,0.707,0.707),self.current_time,'Sonar_3',self.baseId) 
-            elif('NanoOmni' in base_type):   
-                self.tf_broadcaster.sendTransform((0.0, 0.07 ,0.0 ),(0.0,0.0,0.707,0.707),self.current_time,'Sonar_3',self.baseId)          
-        if sonar_num > 3:   
-        # Sonar 4
-            if self.Sonar[3] == 0xff:
-                msg.range = float('inf') 
-            else:
-                msg.range = self.Sonar[3] / 100.0
-            msg.header.frame_id = 'Sonar_4'
-            self.range_pub4.publish(msg)
-            if('Race182' in base_type):
-                self.tf_broadcaster.sendTransform((0.0, -0.06 ,0.0 ),(0.0,0.0,-0.707,0.707),self.current_time,'Sonar_4',self.baseId) 
-            elif('NanoOmni' in base_type):
-                self.tf_broadcaster.sendTransform((0.0, -0.07 ,0.0 ),(0.0,0.0,-0.707,0.707),self.current_time,'Sonar_4',self.baseId) 
-    #IMU Timer callback function to get raw imu info
-    def timerIMUCB(self,event):
-        output = chr(0x5a) + chr(0x06) + chr(0x01) + chr(0x13) + chr(0x00) + chr(0x33) #0x33 is CRC-8 value
-        while(self.serialIDLE_flag):
-            time.sleep(0.01)
-        self.serialIDLE_flag = 3
-        try:
-            while self.serial.out_waiting:
-                pass
-            self.serial.write(output)
-        except:
-            rospy.logerr("Imu Command Send Faild")
-
-        self.serialIDLE_flag = 0
-        msg = Imu()
-        msg.header.stamp = self.current_time
-        msg.header.frame_id = self.imuId
-
-        msg.angular_velocity.x = float(ctypes.c_int32(self.Gyro[0]).value/100000.0)
-        msg.angular_velocity.y = float(ctypes.c_int32(self.Gyro[1]).value/100000.0)
-        msg.angular_velocity.z = float(ctypes.c_int32(self.Gyro[2]).value/100000.0)
-
-        msg.linear_acceleration.x = float(ctypes.c_int32(self.Accel[0]).value/100000.0)
-        msg.linear_acceleration.y = float(ctypes.c_int32(self.Accel[1]).value/100000.0)
-        msg.linear_acceleration.z = float(ctypes.c_int32(self.Accel[2]).value/100000.0)
-
-        msg.orientation.w = float(ctypes.c_int16(self.Quat[0]).value/10000.0)
-        msg.orientation.x = float(ctypes.c_int16(self.Quat[1]).value/10000.0)
-        msg.orientation.y = float(ctypes.c_int16(self.Quat[2]).value/10000.0)
-        msg.orientation.z = float(ctypes.c_int16(self.Quat[3]).value/10000.0)
-
-        self.imu_pub.publish(msg)  
-        # TF value calculate from mechanical structure
-        if('NanoRobot' in base_type):
-            self.tf_broadcaster.sendTransform((-0.062,-0.007,0.08),(0.0,0.0,0.0,1.0),self.current_time,self.imuId,self.baseId)   
-        elif('NanoCar' in base_type):
-            self.tf_broadcaster.sendTransform((0.0,0.0,0.09),(0.0,0.0,0.0,1.0),self.current_time,self.imuId,self.baseId) 
-        elif('4WD' in base_type):
-            self.tf_broadcaster.sendTransform((-0.065,0.0167,0.02),(0.0,0.0,0.0,1.0),self.current_time,self.imuId,self.baseId)     
-        else:
-            self.tf_broadcaster.sendTransform((0.0,0.0,0.0),(0.0,0.0,0.0,1.0),self.current_time,self.imuId,self.baseId)  
-
+        
 #main function
 if __name__=="__main__":
     try:
@@ -636,3 +632,6 @@ if __name__=="__main__":
     except KeyboardInterrupt:
         bc.serial.close
         print("Shutting down")
+
+
+
