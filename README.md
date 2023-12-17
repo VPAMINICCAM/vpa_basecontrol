@@ -106,13 +106,16 @@ Lower -> Upper，Length: 6Byte including
 - QuatY×10000
 - QuatZ×10000
 Data format:
-| Byte1~4 | Byte5~8 | Byte9~12 | Byte13~16 | Byte17~20 | Byte21~24 | Byte25~26 | Byte27~28 | Byte29~30 | Byte31~32 |
+
+| Byte1-4 | Byte5-8 | Byte9-12 | Byte13-16 | Byte17-20 | Byte21-24 | Byte25-26 | Byte27-28 | Byte29-30 | Byte31-32 |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 | GyroX | GyroY | GyroZ | AccelX | AccelY | AccelZ | QuatW | QuatX | QuatY | QuatZ |
 
 ### 0x15 ###
 Upper -> Lower，Length: 6Byte, Ackerman form chassis demand, including speed on X axis*1000(int16_t)+accelX*1000(int16_t),steering angle*1000(int16_t)(in rad)
+
 Note: accelX not in used
+
 |Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
 | ---- | ---- | ---- | ---- | ---- | ---- |
 |X MSB|X LSB|AX MSB|AX LSB|A MSB|A LSB|
@@ -127,6 +130,7 @@ Lower -> Upper，Length: 6Byte, including
 - MOTOR_TYPE (Motor type, uint8_t)
 - Ratio*10 (Gear reduction ratio, int16_t)
 - Diameter*10 (Tire size, int16_t)
+
 |Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
 | ---- | ---- | ---- | ---- | ---- | ---- |
 |BASE_TYPE|MOTOR_TYPE|ratio MSB|ratio LSB|diameter MSB|diameter LSB|
