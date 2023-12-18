@@ -26,6 +26,7 @@ import serial
 import string
 import ctypes
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import BatteryState
 from sensor_msgs.msg import Imu
@@ -94,6 +95,7 @@ class BaseControl:
         self.cmd_vel_topic= rospy.get_param('~cmd_vel_topic','/cmd_vel')
         self.ackermann_cmd_topic = rospy.get_param('~ackermann_cmd_topic','/ackermann_cmd_topic')
         self.pub_imu = bool(rospy.get_param('~pub_imu',False))
+        self.estop = True
         if(self.pub_imu == True):
             self.imuId = rospy.get_param('~imu_id','imu')
             self.imu_topic = rospy.get_param('~imu_topic','imu')
@@ -102,7 +104,10 @@ class BaseControl:
                 self.imu_freq = 100
         self.pub_sonar = bool(rospy.get_param('~pub_sonar',False))
         self.sub_ackermann = bool(rospy.get_param('~sub_ackermann',False))
-
+        
+        self.sub_e_stop = rospy.Subscriber("/global_brake", Bool, self.estop_cb, queue_size=1)
+        rospy.loginfo("Subscribed to the global brake command")
+        
         #define variable
         self.current_time = rospy.Time.now()
         self.previous_time = self.current_time
@@ -191,6 +196,14 @@ class BaseControl:
         self.getSN()
         time.sleep(0.01)
         self.getInfo()
+
+    def estop_cb(self,msg):
+        self.estop = msg.data
+        if self.estop:
+            rospy.loginfo("Global Brake Activated")
+        else:
+            rospy.loginfo("Global Brake Released")
+    
     #CRC-8 Calculate
     def crc_1byte(self,data):
         crc_1byte = 0
@@ -215,6 +228,10 @@ class BaseControl:
         self.trans_y = data.linear.y
         self.rotat_z = data.angular.z
         self.last_cmd_vel_time = rospy.Time.now()
+        if self.estop:
+            self.trans_x = 0
+            self.trans_y = 0
+            self.rotat_z = 0
         outputdata = [0x5a,0x0c,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
         outputdata[4] = (int(self.trans_x*1000.0)>>8)&0xff
         outputdata[5] = int(self.trans_x*1000.0)&0xff
@@ -223,7 +240,7 @@ class BaseControl:
         outputdata[8] = (int(self.rotat_z*1000.0)>>8)&0xff
         outputdata[9] = int(self.rotat_z*1000.0)&0xff
         crc_8 = self.crc_byte(outputdata,len(outputdata)-1)
-        outputdata[11] = crc_8
+        outputdata[11] = crc_8  
         while self.serialIDLE_flag:
             time.sleep(0.01)
         self.serialIDLE_flag = 4
