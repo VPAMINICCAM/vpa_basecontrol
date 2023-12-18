@@ -8,7 +8,6 @@ This package send twsit inforation by usart to its low level controller, which i
 
 To use the usart, the hardware for usart shall be enabled and a udev rule must recreated. To create the udev rule, you may check 'scripts/rpi4initsetup.sh'.
 
-
 # base_control
 BingDa Robot move chasssis control package
 
@@ -37,141 +36,122 @@ The part will skip if such sensor is not installed
 
 ### 0x01 ###
 Upper -> Lower, Length: 6Byte，setting: speed to on x axis *1000(int16_t),  speed on y axis*1000(int16_t) and yaw rate *1000(int16_t)s
-Byte1   Byte2   Byte3   Byte4   Byte5   Byte6
-X MSB   X LSB   Y MSB   Y LSB   Z MSB   Z LSB
+
+|Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
+| ---- | ---- | ---- | ---- | ---- | ---- |
+|X MSB|X LSB|Y MSB|Y LSB|Z MSB|Z LSB|
+
 Example: 5A 0C 01 01 01 F4 00 00 00 00 00 56 (Moving forward at 0.5 m/s)
 ### 0x02 ###
 Lower -> Upper，Length: 0Byte，reply when only failed to set the speed
 ### 0x03 ###
 Upper -> Lower，Length: 0Byte demanding current speed
+
 Example: 5A 06 01 03 00 DF
 ### 0x04 ###
 Lower -> Upper，Length: 6Byte，replying: speed to on x axis *1000(int16_t), speed on y axis*1000(int16_t) and yaw rate *1000(int16_t)s
-Byte1   Byte2   Byte3   Byte4   Byte5   Byte6
-X MSB   X LSB   Y MSB   Y LSB   Z MSB   Z LSB
+
+|Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
+| ---- | ---- | ---- | ---- | ---- | ---- |
+|X MSB|X LSB|Y MSB|Y LSB|Z MSB|Z LSB|
+
 ### 0x05 ###
 Upper -> Lower，Length: 0Byte demanding IMU readings
+
 Example: 5A 06 01 05 00 75
 ### 0x06 ###
 Lower -> Upper，Length: 6Byte replying: IMUPitch*1000(int16_t),Roll*1000(int16_t) and  Yaw*1000(int16_t)
-Byte1   	Byte2   	Byte3   	Byte4   	Byte5		Byte6
-Pitch MSB   Pitch LSB   Roll MSB   	Roll LSB   	Yaw MSB   	Yaw LSB
 
-0x07
-上位机向下位机查询电池信息，数据长度为0Byte
-例:5A 06 01 07 00 E4 
+|Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
+| ---- | ---- | ---- | ---- | ---- | ---- |
+|Pitch MSB|Pitch LSB|Roll MSB|Roll LSB|Yaw MSB|Yaw LSB|
 
-0x08
-下位机上报电池信息，数据长度为4Byte，数据为电压Voltage*1000(uint16_t) + 电流Current*1000(uint16_t)
-数据格式为：
-Byte1   		Byte2   		Byte3   		Byte4 
-Voltage MSB		Voltage LSB		Current MSB		Current LSB
+### 0x07 ###
+Upper -> Lower，Length: 0Byte demanding Battery readings
+Example: 5A 06 01 07 00 E4 
 
-0x09
-上位机向下位机获取里程计信息
-例:5A 06 01 09 00 38
+### 0x08 ###
+Lower -> Upper，Length: 4Byte replying: battery info, Voltage*1000(uint16_t) and Current*1000(uint16_t)
 
-0x0a
-下位机上报速度航向信息，数据长度为6Byte，数据为线速度*1000、角度*100、角速度*1000
-Byte1   Byte2   Byte3     Byte4     Byte5   Byte6
-X MSB   X LSB   Yaw MSB   Yaw LSB   Z MSB   Z LSB
+Data format
+|Byte1|Byte2|Byte3|Byte4|
+| ---- | ---- | ---- | ---- |
+|Voltage MSB|Voltage LSB|Current MSB|Current LSB|
 
-0x11
-上位机向下位机获取里程计信息（相比功能码0x09对应的消息，增加了Y轴线速度，为了适应全向移动底盘的需求）
-例:5A 06 01 11 00 A2
+### 0x08 ###
+Upper -> Lower，Length: 0Byte demanding Odom readings
 
-0x12
-下位机上报速度航向信息，数据长度为8Byte，数据为X轴线速度*1000、Y轴线速度*1000、角度*100、角速度*1000，
-Byte1   Byte2   Byte3   Byte4    Byte5    Byte6    Byte7   Byte8
-X MSB   X LSB   Y MSB   Y LSB    Yaw MSB  Yaw LSB  Z MSB   Z LSB
+Example: 5A 06 01 09 00 38
 
-0x13
-上位机向下位机查询IMU原始数据，数据长度为0Byte
-5A 06 01 13 00 33
+### 0x0a ###
+Lower -> Upper，Length: 6Byte replying: longtitude speed(X)*1000, angle*100, yaw rate (Z)*1000
+|Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
+| ---- | ---- | ---- | ---- | ---- | ---- |
+|X MSB|X LSB|Yaw MSB|Yaw LSB|Z MSB|Z LSB|
 
-0x14
-下位机上报当IMU数据，数据长度为32Byte，数据为GyroX*100000(int32_t)、GyroY*100000(int32_t)、GyroZ*100000(int32_t)、
-                                             AccelX*100000(int32_t)、AccelY*100000(int32_t)、AccelZ*100000(int32_t)、
-                                             QuatW×10000、QuatX×10000、QuatY×10000、QuatZ×10000
-数据格式为：（高位在前，低位在后）
-Byte1~4   Byte5~8   Byte9~12   Byte13~16   Byte17~20   Byte21~24   Byte25~26   Byte27~28   Byte29~30   Byte31~32
-GyroX     GyroY     GyroZ      AccelX      AccelY      AccelZ      QuatW       QuatX       QuatY       QuatZ
+### 0x13 ###
+Upper -> Lower，Length: 0Byte demanding IMU raw readings
+Example: 5A 06 01 13 00 33
 
-0x15
-上位机向下位机发送速度控制指令(阿克曼结构车型)，数据长度为6Byte，数据为X轴方向速度*1000(int16_t) + X轴方向加速度*1000(int16_t) + 转向角度*1000(int16_t)(角度为弧度制)
-注：加速度值暂时未使用
-Byte1   Byte2   Byte3    Byte4    Byte5   Byte6
-X MSB   X LSB   AX MSB   AX LSB   A MSB   A LSB
-例:5A 0C 01 15 00 CB 00 00 00 CB 00 74 (底盘以0.2m/s的速度，0.2弧度的转向角向前运动)
+### 0x14 ###
+Lower -> Upper，Length: 6Byte including
+- GyroX*100000(int32_t)
+- GyroY*100000(int32_t)
+- GyroZ*100000(int32_t)
+- AccelX*100000(int32_t)
+- AccelY*100000(int32_t)
+- AccelZ*100000(int32_t)
+- QuatW×10000
+- QuatX×10000
+- QuatY×10000
+- QuatZ×10000
+Data format:
 
-0x17
-上位机向下位机获取ADC接口的ADC值，ADC采样范围为0~6.6V，ADC值和电压的换算关系为((电压/2)/3.3V)*4095 = ADC值
-5A 06 01 17 00 08
+| Byte1-4 | Byte5-8 | Byte9-12 | Byte13-16 | Byte17-20 | Byte21-24 | Byte25-26 | Byte27-28 | Byte29-30 | Byte31-32 |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| GyroX | GyroY | GyroZ | AccelX | AccelY | AccelZ | QuatW | QuatX | QuatY | QuatZ |
 
-0x18
-下位机回复上位机ADC值，数据格式为：（高位在前，低位在后）
-Byte1~2   Byte3~4   Byte5~6   Byte7~8   Byte9~10   Byt11~12
-ADC1      ADC2      ADC3      ADC4      ADC5       ADC6
+### 0x15 ###
+Upper -> Lower，Length: 6Byte, Ackerman form chassis demand, including speed on X axis*1000(int16_t)+accelX*1000(int16_t),steering angle*1000(int16_t)(in rad)
 
-0x19
-上位机向下位机获取超声波测距值，单位为cm
-5A 06 01 19 00 D4
+Note: accelX not in used
 
-0x1a
-下位机回复上位机超声波测距值
-Byte1       Byte2       Byte3       Byte4
-超声波1     超声波2      超声波3      超声波4
+|Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
+| ---- | ---- | ---- | ---- | ---- | ---- |
+|X MSB|X LSB|AX MSB|AX LSB|A MSB|A LSB|
 
-0x1b
-上位机设置下位机IO口值，数据长度为4Byte，分别对应4个IO口的值，0为低电平，1为高电平
-例：5A 0a 01 1B 01 00 00 00 00 93 设置IO1为高电平，IO2、IO3、IO4为低电平
+### 0x21 ###
+Upper -> Lower，Length: 6Byte, demanding chassis configuration
+Example :5a 06 01 21 00 8F
 
-0x1c
-下位机回复上位机IO口值
-例：5A 0a 01 1C 01 00 00 00 00 16 当前IO1为高电平，IO2、IO3、IO4为低电平
+### 0x22 ###
+Lower -> Upper，Length: 6Byte, including
+- BASE_TYPE (Type of chassis, uint8_t)
+- MOTOR_TYPE (Motor type, uint8_t)
+- Ratio*10 (Gear reduction ratio, int16_t)
+- Diameter*10 (Tire size, int16_t)
 
-0x1d
-上位机设置下位机PWM口输出值，数据长度为8Byte，分别对应4个PWM口的高电平时间，单位为us，PWM周期为20000us
-Byte1~2   Byte3~4   Byte5~6   Byte7~8   Byte9~10   Byt11~12
-PWM1      PWM2      PWM3      PWM4      PWM5       PWM6
-例：5A 0e 01 1D 01 00 00 00 00 00 00 00  00  46 设置PWM1为高电平时间为256us，PWM2、PWM3、PWM4高电平时间为0
+|Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
+| ---- | ---- | ---- | ---- | ---- | ---- |
+|BASE_TYPE|MOTOR_TYPE|ratio MSB|ratio LSB|diameter MSB|diameter LSB|
 
-0x1e
-下位机回复上位机PWM口值
-例：5A 0e 01 1E 01 00 00 00 00 00 00 00  00  0D 当前PWM1为高电平时间为256us，PWM2、PWM3、PWM4高电平时间为0
+### 0xf1 ###
+Upper -> Lower，Length: 0Byte, demanding lower controller software/hardware version
+Example :5a 06 01 f1 00 d7
 
-0x1f
-上位机设置下位机LED灯条灯颜色和亮度，数据长度为15Byte，分别对应5个LED灯的R、G、B值（值范围为0~255）
-例：5A 15 01 1F FF 00 00 00 FF 00 00 80 FF 00 00 00 00 00 00 00 4D 
-设置LED1 红色亮度为255，LED2 绿色亮度为255，LED3绿色亮度为128，蓝色亮度为255，其余LED亮度均为0 
+### 0xf2 ###
+Lower -> Upper，Length: 6Byte, hardware version: xx.yy.zz, software version: aa.bb.cc，
+|Byte1|Byte2|Byte3|Byte4|Byte5|Byte6|
+| ---- | ---- | ---- | ---- | ---- | ---- |
+|xx|yy|zz|aa|bb|cc|
 
-0x21
-上位机向下位机获取底盘配置信息
-例:5a 06 01 21 00 8F
+### 0xf3 ###
+Upper -> Lower，Length: 0Byte, demanding S/N number
+Example:5a 06 01 f3 00 46
 
-0x22
-下位机回复配置信息数据长度为xByte,格式为BASE_TYPE(底盘类型uint8_t) + MOTOR_TYPE(电机型号uint8_t) + ratio*10(电机减速比int16_t) + diameter*10(轮胎直径int16_t)
-Byte1       Byte2       Byte3      Byte4      Byte5         Byte6 
-BASE_TYPE   MOTOR_TYPE  ratio MSB  ratio LSB  diameter MSB  diameter LSB
+### 0xf4 ###
+Lower -> Upper，Length: 12Byte
 
-0xf1
-上位机向下位机查询版本号
-例:5a 06 01 f1 00 d7
-
-0xf2
-下位机回复版本号，数据长度为6Byte,格式为硬件版本号xx.yy.zz,软件版本号aa.bb.cc，
-Byte1   Byte2   Byte3   Byte4   Byte5   Byte6
-xx      yy      zz      aa      bb      cc
-
-0xf3
-上位机向下位机查询主板SN号
-例:5a 06 01 f3 00 46
-
-0xf4
-下位机回复版本号，数据长度为12Byte,高位在前，低位在后
-Byte1~12 
-SN号
-
-0xfd
-上位机向下位机发送重启指令,下位机无回复
-例:5a 06 01 fd 00 9a
+### 0xfd ###
+Upper -> Lower，Length: 0Byte, demanding reboot
+Example: 5a 06 01 fd 00 9a
