@@ -45,7 +45,7 @@ class WheelEncoderNode():
         #tick storage
         self._tick = 0
         self._tick_last = 0
-        
+        self._last_tick_timing = 0
         self._omega = 0
 
         self._tick_pub = rospy.Publisher(
@@ -79,6 +79,13 @@ class WheelEncoderNode():
         """
     
         self._tick = tick_no
+        
+        now  = rospy.get_time()
+        diff = now - self._last_tick_timing
+        self._last_tick_timing = now
+        self._omega = (2*pi/self._resolution)/diff
+        
+        # if no tick changes for a while -> set to 0
 
     
     def _frequency_change_cb(self):
@@ -93,8 +100,11 @@ class WheelEncoderNode():
     def _cb_publish(self, _):
         delta_tick = self._tick - self._tick_last
         self._tick_last = self._tick
-        
-        _omega = self._publish_frequency * (delta_tick / self._resolution)*2*pi
+
+        if delta_tick == 0:
+            _omega = 0
+        else:
+            _omega = self._omega
         
         header = Header()
         header.frame_id = f"{self._veh}/{self._name}_wheel_axis"
