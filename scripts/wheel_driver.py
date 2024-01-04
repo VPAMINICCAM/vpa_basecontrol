@@ -33,15 +33,15 @@ class WheelsDriverNode():
         
         self._err_int         = 0
         
-        self.kp = 0.08
-        self.ki = 0.0003
+        self.kp = 0.15
+        self.ki = 0.05
         
         # Subscribers
         self.sub_topic = rospy.Subscriber("wheels_cmd", WheelsCmd, self.wheels_cmd_cb, queue_size=1)
         
         self.sub_left_tick  = rospy.Subscriber("left_wheel_encoder_node/tick",WheelEncoderStamped,self.left_omega_callback,queue_size=1)
         self.sub_right_tick = rospy.Subscriber("right_wheel_encoder_node/tick",WheelEncoderStamped,self.right_omega_callback,queue_size=1)
-        self.srv = Server(omegaConfig,self.dynamic_reconfigure_callback)
+        # self.srv = Server(omegaConfig,self.dynamic_reconfigure_callback)
         rospy.loginfo("Wheel Driver Initialized")
         
     def wheels_cmd_cb(self, msg:WheelsCmd):
@@ -85,12 +85,12 @@ class WheelsDriverNode():
 
     def omega_pid(self,cur_omega,cur_ref_omega):
         if cur_ref_omega < 0.01:
+            self._err_int = 0
             return 0
         kp = self.kp
         ki = self.ki
         err_omega = cur_ref_omega - cur_omega
         self._err_int += err_omega
-        
         #print('current_err',err_omega)
         throttle_control = kp * err_omega + ki * self._err_int
         if throttle_control > 1:
