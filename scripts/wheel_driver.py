@@ -33,7 +33,7 @@ class WheelsDriverNode():
         
         self._err_int         = 0
         
-        self.kp = 0.15
+        self.kp = 0.12
         self.ki = 0.05
         
         # Subscribers
