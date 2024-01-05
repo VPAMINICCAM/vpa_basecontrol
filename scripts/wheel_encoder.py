@@ -104,13 +104,23 @@ class WheelEncoderNode():
         delta_tick = self._tick - self._tick_last
         self._tick_last = self._tick
         
+<<<<<<< HEAD
+=======
+        if self._omega > 15 * self._omega_last:
+            self._omega = self._omega_last
+        
+>>>>>>> 2a4d1e5f7f2a24cb01ed6fe26cdbdae103058532
         if delta_tick == 0:
             _omega = 0
         else:
             _omega = self._omega
+<<<<<<< HEAD
         
         self._omega_last = _omega
         
+=======
+        self._omega_last = _omega
+>>>>>>> 2a4d1e5f7f2a24cb01ed6fe26cdbdae103058532
         header = Header()
         header.frame_id = f"{self._veh}/{self._name}_wheel_axis"
         header.stamp = rospy.Time.now()
