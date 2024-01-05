@@ -41,7 +41,7 @@ class WheelsDriverNode():
         
         self.sub_left_tick  = rospy.Subscriber("left_wheel_encoder_node/tick",WheelEncoderStamped,self.left_omega_callback,queue_size=1)
         self.sub_right_tick = rospy.Subscriber("right_wheel_encoder_node/tick",WheelEncoderStamped,self.right_omega_callback,queue_size=1)
-        # self.srv = Server(omegaConfig,self.dynamic_reconfigure_callback)
+        self.srv = Server(omegaConfig,self.dynamic_reconfigure_callback)
         rospy.loginfo("Wheel Driver Initialized")
         
     def wheels_cmd_cb(self, msg:WheelsCmd):
