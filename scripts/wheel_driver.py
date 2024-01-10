@@ -33,8 +33,8 @@ class WheelsDriverNode():
         
         self._err_int         = 0
         
-        self.kp = 0.08
-        self.ki = 0.01
+        self.kp = 0.1
+        self.ki = 0.005
         
         # Subscribers
         self.sub_topic = rospy.Subscriber("wheels_cmd", WheelsCmd, self.wheels_cmd_cb, queue_size=1)
