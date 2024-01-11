@@ -105,6 +105,10 @@ class KinematicsNode():
         self.estop = msg.data
         if self.estop:
             rospy.loginfo("Global Brake Activated")
+            msg_wheels_cmd              = WheelsCmd()
+            msg_wheels_cmd.vel_right    = 0
+            msg_wheels_cmd.vel_left     = 0
+            self.pub_wheels_cmd.publish(msg_wheels_cmd)
         else:
             rospy.loginfo("Global Brake Released")
             
