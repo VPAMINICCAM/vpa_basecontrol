@@ -95,8 +95,8 @@ class WheelsDriverNode():
         throttle_control = kp * err_omega + ki * self._err_int
         if throttle_control > 1:
             throttle_control = 1
-        if throttle_control < 0:
-            throttle_control = 0
+        if throttle_control < -1:
+            throttle_control = -1
         return throttle_control
     
 if __name__ == "__main__":
