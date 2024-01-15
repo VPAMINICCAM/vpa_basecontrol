@@ -84,7 +84,10 @@ class WheelEncoderNode():
         now  = rospy.get_time()
         diff = now - self._last_tick_timing
         self._last_tick_timing = now
-        self._omega = (2*pi/self._resolution)/diff
+        if self._tick < self._tick_last:
+            self._omega = (-2*pi/self._resolution)/diff
+        else:
+            self._omega = (2*pi/self._resolution)/diff
         if self._omega > 25:
             self._omega =self._omega_last
         
