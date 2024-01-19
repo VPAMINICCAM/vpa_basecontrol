@@ -89,6 +89,9 @@ class WheelsDriverNode():
             return 0
         kp = self.kp
         ki = self.ki
+        if cur_omega < 0.0318 * 2 * 3.14 * 0.1:
+            kp = 0.06
+            # traction reduce at low speed, preventing overshot
         err_omega = cur_ref_omega - cur_omega
         self._err_int += err_omega
         #print('current_err',err_omega)
