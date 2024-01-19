@@ -33,7 +33,7 @@ class WheelsDriverNode():
         
         self._err_int         = 0
         
-        self.kp = 0.1
+        self.kp = 0.15
         self.ki = 0.005
         
         # Subscribers
@@ -94,6 +94,11 @@ class WheelsDriverNode():
             # traction reduce at low speed, preventing overshot
         err_omega = cur_ref_omega - cur_omega
         self._err_int += err_omega
+        if self._err_int > 100:
+            self._err_int = 100
+        elif self._err_int < -100:
+            self._err_int = -100
+        
         #print('current_err',err_omega)
         throttle_control = kp * err_omega + ki * self._err_int
         if throttle_control > 1:
